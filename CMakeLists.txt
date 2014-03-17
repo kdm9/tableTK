@@ -9,7 +9,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 enable_testing()
 
 # CC options
-add_definitions(-std=gnu99 -O3)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -O3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
 include_directories(${CMAKE_PROJECT_SOURCE_DIR}/src)
 link_directories(${CMAKE_PROJECT_BINARY_DIR}/lib)
 
