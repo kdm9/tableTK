@@ -55,6 +55,7 @@ filter_table (table_t *tab)
         }
         size_t col = 0;
         size_t cell = 0;
+
         char *tok_tmp = NULL;
         char *token = NULL;
         char *tok_line = strdup(buf);
@@ -155,7 +156,7 @@ parse_args (int argc, char *argv[], table_t *tab)
         tab->sep = strdup("\t");
     }
     /* Setup input fp */
-    if ((!haveflags & 4) || tab->fname == NULL || \
+    if ((!(haveflags & 4)) || tab->fname == NULL || \
             strncmp(tab->fname, "-", 1) == 0) {
         tab->fp = fdopen(fileno(stdout), "r");
         tab->fname = strdup("stdin");
@@ -169,7 +170,7 @@ parse_args (int argc, char *argv[], table_t *tab)
         return 0;
     }
     /* Setup output fp */
-    if ((!haveflags & 2) || tab->outfname == NULL || \
+    if ((!(haveflags & 2)) || tab->outfname == NULL || \
             strncmp(tab->outfname, "-", 1) == 0) {
         tab->outfp = fdopen(fileno(stdout), "w");
         tab->outfname = strdup("stdin");
