@@ -22,13 +22,15 @@
 
 #include "filter_table.h"
 
-int ft_median (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
+static inline int
+ft_median (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
 {
     FT_CELL_TYPE med = quick_select(data, count);
     return med >= (FT_CELL_TYPE) threshold;
 }
 
-int ft_num_nonzero (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
+static inline int
+ft_num_nonzero (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
 {
     size_t iii = 0;
     size_t passes = 0;
@@ -38,7 +40,8 @@ int ft_num_nonzero (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
     return passes >= threshold;
 }
 
-int filter_table (table_t *tab)
+int
+filter_table (table_t *tab)
 {
     char *buf = calloc(FT_BUFFSIZE, sizeof(*buf));
     FT_CELL_TYPE *cel_buf = calloc(FT_BUFFSIZE, sizeof(*cel_buf));
@@ -77,7 +80,8 @@ int filter_table (table_t *tab)
     return 1;
 }
 
-void print_usage()
+void
+print_usage()
 {
     fprintf(stderr, "filterTable\n\n");
     fprintf(stderr, "Filter a large table row-wise.\n\n");
@@ -93,7 +97,8 @@ void print_usage()
     fprintf(stderr, "\t-o OUTFILE\tOutput to OUTFILE, not stdout (or '-' for stdout).\n");
 }
 
-int parse_args (int argc, char *argv[], table_t *tab)
+int
+parse_args (int argc, char *argv[], table_t *tab)
 {
     unsigned char haveflags = 0;
     /*
