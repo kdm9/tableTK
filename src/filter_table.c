@@ -34,7 +34,7 @@ ft_num_nonzero (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
 {
     size_t iii = 0;
     size_t passes = 0;
-    for (iii; iii<count; ){
+    while ((iii < count) && (passes < (size_t)threshold)) {
         if (data[iii++] > 0.) passes++;
     }
     return passes >= threshold;
@@ -46,7 +46,8 @@ filter_table (table_t *tab)
     char *buf = calloc(FT_BUFFSIZE, sizeof(*buf));
     FT_CELL_TYPE *cel_buf = calloc(FT_BUFFSIZE, sizeof(*cel_buf));
     size_t row = 0;
-    while(fgets(buf, FT_BUFFSIZE, tab->fp) != NULL) {
+    ssize_t rowlen = 0;
+    while (fgets(buf, FT_BUFFSIZE, tab->fp) != NULL) {
         if (row < tab->skiprow) {
             row++;
             fprintf(tab->outfp, "%s", buf);
@@ -63,17 +64,18 @@ filter_table (table_t *tab)
                 col++;
                 continue;
             }
-            cel_buf[cell++] = atof(token);
+            cel_buf[cell++] = strtod(token, NULL);
             col++;
             token = strtok_r(NULL, tab->sep, &tok_tmp);
         }
-        row++;
         if ((*(tab->filter_fn))(cel_buf, tab->threshold, col + 1)) {
             fprintf(tab->outfp, "%s", buf);
         }
+        row++;
+        free(tok_line);
         memset(buf, 0, FT_BUFFSIZE);
         memset(cel_buf, 0, FT_BUFFSIZE);
-        free(tok_line);
+        if (row % 100000 == 0) {fprintf(stderr, "."); fflush(stderr);}
     }
     free(buf);
     free(cel_buf);

@@ -27,7 +27,7 @@
 
 #define	FT_CELL_TYPE double
 
-#define	FT_BUFFSIZE 1<<11
+#define	FT_BUFFSIZE 1<<14
 
 typedef struct _table {
     FILE *fp;
