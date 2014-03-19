@@ -25,7 +25,8 @@
 #include <string.h>
 #include <errno.h>
 
-#define	FT_CELL_TYPE double
+#define	FT_CELL_TYPE uint64_t
+#define FT_CELL_STRTO_FN(ptr, endptr) strtoull(ptr, endptr, 10)
 
 #define	FT_BUFFSIZE 1<<14
 

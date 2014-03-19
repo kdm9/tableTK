@@ -11,8 +11,8 @@ enable_testing()
 # CC options
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -O3")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -Wall -Wpedantic")
-include_directories(${CMAKE_PROJECT_SOURCE_DIR}/src)
-link_directories(${CMAKE_PROJECT_BINARY_DIR}/lib)
+include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/libkdm)
+link_directories(${CMAKE_BINARY_DIR}/lib)
 
 add_subdirectory(src)
 add_subdirectory(test)
