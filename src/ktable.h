@@ -50,8 +50,7 @@ typedef struct _table {
     uint64_t skipcol;
     cell_mode_t mode;
     cell_t threshold;
-    int (**row_fns)(cell_t *, size_t, void *, struct _table *);
-    size_t n_row_fns;
+    void (*row_fn)(struct _table *, char *, cell_t *, size_t, void *);
 } table_t;
 
 /* Macros */
@@ -60,7 +59,6 @@ typedef struct _table {
         if ((t)->fname != NULL) free((t)->fname);                           \
         if ((t)->outfname != NULL) free((t)->outfname);                     \
         if ((t)->sep != NULL) free((t)->sep);                               \
-        if ((t)->row_fns != NULL) free((t)->sep);                               \
         if ((t)->fp != NULL) fclose((t)->fp);                               \
         if ((t)->outfp != NULL) fclose((t)->outfp);                         \
         free((t));                                                          \
@@ -72,7 +70,6 @@ typedef struct _table {
         ((t)->outfname != NULL) &&                                          \
         ((t)->sep != NULL) &&                                               \
         ((t)->fp != NULL) &&                                                \
-        ((t)->fp != NULL) &&                                                \
         ((t)->outfp != NULL)                                                \
     )
 
@@ -82,9 +79,8 @@ typedef struct _table {
 /* Function prototypes */
 extern void strtocellt(cell_t *cell, const char *str, char **saveptr,
         cell_mode_t mode);
-extern size_t count_columns(const char *row, const char *delim);
-int iter_table (table_t *tab, void *data,
-        int (*result_fn)(table_t *, size_t, int *, char *, cell_t *, void *));
+extern size_t count_columns(const char *row, const char *delim, size_t len);
+int iter_table (table_t *tab, void *data);
 
 /*
  *  This Quickselect routine is based on the algorithm described in
@@ -93,6 +89,6 @@ int iter_table (table_t *tab, void *data,
  *  This code by Nicolas Devillard - 1998. Public domain.
  */
 #define ELEM_SWAP(a,b) { register cell_t t=(a);(a)=(b);(b)=t; }
-extern cell_t quick_select(cell_t arr[], int n, cell_mode_t mode);
+extern cell_t median(cell_t arr[], int n, cell_mode_t mode);
 
 #endif /* TABLE_H */

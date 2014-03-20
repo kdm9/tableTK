@@ -18,14 +18,20 @@
 
 #include "ktable.h"
 
-inline size_t
-count_columns (const char *row, const char *delim)
+size_t
+count_columns (const char *row, const char *delim, size_t len)
 {
-    size_t cols;
-    char *tok = NULL;
-    while((tok = strpbrk(row, delim)) != NULL) {
+    size_t cols = 0;
+    size_t bytes_used = 0;
+    char *tok_line = strdup(row);
+    char *tok_tmp = NULL;
+    char *tok = strtok_r(tok_line, delim, &tok_tmp);
+    while (tok != NULL && bytes_used < len) {
+        bytes_used += (tok - tok_line);
         cols++;
+        tok = strtok_r(NULL, delim, &tok_tmp);
     }
+    km_free(tok_line);
     return cols;
 }
 
@@ -43,69 +49,59 @@ strtocellt (cell_t *cell, const char *str, char **saveptr, cell_mode_t mode)
 }
 
 int
-iter_table (table_t *tab, void *data,
-            int (*result_fn)(table_t *, size_t, int *, char *, cell_t *,
-                             void *))
+iter_table (table_t *tab, void *data)
 {
     if (!table_is_valid(tab)) {
         return -1;
     }
-    size_t buffsize = 1<<8;
-    char *buf = km_calloc(buffsize, sizeof(*buf), &km_onerr_print_exit);
-    size_t cellbuffsize = 1<<8;
-    cell_t *cell_buf = NULL;
+    size_t buffsize = 1<<15;
+    char *line = km_calloc(buffsize, sizeof(*line), &km_onerr_print_exit);
+    cell_t *cells = NULL;
     size_t row = 0;
     ssize_t rowlen = 0;
-    size_t num_cols = 0;
-    if (tab->rows != 0) {
-        cell_buf = km_calloc(tab->cols, sizeof(*cell_buf),
-                &km_onerr_print_exit);
-    }
-    while ((rowlen = km_readline_realloc(buf, tab->fp, &buffsize,
+    int res = 0;
+    while ((rowlen = km_readline_realloc(&line, tab->fp, &buffsize,
                                          &km_onerr_print_exit)) > 0) {
-        int *results = km_calloc(tab->n_row_fns, sizeof(*results),
-                &km_onerr_print_exit);
-        size_t fn_num;
         size_t col = 0;
         size_t cell = 0;
         char *tok_tmp = NULL;
         char *token = NULL;
-        char *tok_line = strdup(buf);
-        if (row < tab->skiprow) {
+        char *tok_line = NULL;
+        /* Skip rows we don't want */
+        if (km_unlikely(row < tab->skiprow)) {
             row++;
-            fprintf(tab->outfp, "%s", buf);
+            fprintf(tab->outfp, "%s", line);
             continue;
-        } else if (cell_buf == NULL) {
-            tab->cols = count_columns(buf, tab->sep) - tab->skipcol;
-            cell_buf = km_calloc(tab->cols, sizeof(*cell_buf),
+        } else if (km_unlikely(cells == NULL)) {
+            /* Get the number of data columns */
+            tab->cols = count_columns(line, tab->sep, rowlen) - tab->skipcol;
+            cells = km_calloc(tab->cols, sizeof(*cells),
                     &km_onerr_print_exit);
         }
+        /* Tokenise the remainder of the line, reading in cells */
+        tok_line = strdup(line);
         token = strtok_r(tok_line, tab->sep, &tok_tmp);
         while (token != NULL && cell < tab->cols) {
             if (col < tab->skipcol) {
                 col++;
                continue;
             }
-            strtocellt(&(cell_buf[cell++]), token, NULL, tab->mode);
+            strtocellt(&(cells[cell++]), token, NULL, tab->mode);
             col++;
             token = strtok_r(NULL, tab->sep, &tok_tmp);
         }
-        for (fn_num = 0; fn_num < tab->n_row_fns; fn_num++) {
-            results[fn_num] = (*(tab->row_fns[fn_num])) \
-                    (cell_buf, col + 1, data, tab);
-            (*result_fn)(tab, tab->n_row_fns, results, buf, cell_buf, data);
-        }
+        km_free(tok_line);
+        (*(tab->row_fn))(tab, line, cells, cell, data);
         row++;
         tab->rows++;
-        free(tok_line);
     }
-    free(buf);
-    free(cell_buf);
-    return 1;
+    km_free(line);
+    km_free(cells);
+    return res;
 }
 
 inline cell_t
-quick_select(cell_t arr[], int n, cell_mode_t mode)
+median(cell_t arr[], int n, cell_mode_t mode)
 {
     int low, high;
     int median;
