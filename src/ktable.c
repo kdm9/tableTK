@@ -27,12 +27,12 @@ count_columns (const char *row, const char *delim, size_t len)
     char *tok_tmp = NULL;
     char *tok = strtok_r(tok_line, delim, &tok_tmp);
     while (tok != NULL && bytes_used < len) {
-        bytes_used += (tok - tok_line);
+        bytes_used = (tok - tok_line);
         cols++;
         tok = strtok_r(NULL, delim, &tok_tmp);
     }
     km_free(tok_line);
-    return cols;
+    return cols + 1; /* Count the last column */
 }
 
 inline void
@@ -41,10 +41,13 @@ strtocellt (cell_t *cell, const char *str, char **saveptr, cell_mode_t mode)
     switch(mode) {
         case U64:
             cell->u = strtoull(str, saveptr, 10);
+            break;
         case I64:
             cell->i = strtoll(str, saveptr, 10);
+            break;
         case D64:
-            cell->d = strtod(str, saveptr);
+            cell->d = strtold(str, saveptr);
+            break;
     }
 }
 
@@ -82,12 +85,11 @@ iter_table (table_t *tab, void *data)
         tok_line = strdup(line);
         token = strtok_r(tok_line, tab->sep, &tok_tmp);
         while (token != NULL && cell < tab->cols) {
-            if (col < tab->skipcol) {
-                col++;
-               continue;
+            if (col++ < tab->skipcol) {
+                token = strtok_r(NULL, tab->sep, &tok_tmp);
+                continue;
             }
             strtocellt(&(cells[cell++]), token, NULL, tab->mode);
-            col++;
             token = strtok_r(NULL, tab->sep, &tok_tmp);
         }
         km_free(tok_line);
