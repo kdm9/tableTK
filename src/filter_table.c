@@ -16,76 +16,52 @@
  * ============================================================================
  */
 #include <getopt.h>
-#include "kdm.h"
-
 #include "filter_table.h"
 
-
-static inline int
-ft_median (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
+static inline void
+ft_median (table_t *tab, char *line, cell_t *cells, size_t count,
+               void *data)
 {
-    FT_CELL_TYPE med = quick_select(data, count);
-    return med >= (FT_CELL_TYPE) threshold;
+    cell_t med = median(cells, count, tab->mode);
+    switch(tab->mode) {
+        case U64:
+            if (med.u >= tab->threshold.u) fprintf(tab->outfp, "%s", line);
+        case I64:
+            if (med.i >= tab->threshold.i) fprintf(tab->outfp, "%s", line);
+        case D64:
+            if (med.d >= tab->threshold.d) fprintf(tab->outfp, "%s", line);
+    }
 }
 
-static inline int
-ft_num_nonzero (FT_CELL_TYPE *data, FT_CELL_TYPE threshold, size_t count)
+static inline void
+ft_num_nonzero (table_t *tab, char *line, cell_t *cells, size_t count,
+               void *data)
 {
     size_t iii = 0;
     size_t passes = 0;
-    while ((iii < count) && (passes < (size_t)threshold)) {
-        if (data[iii++] > 0) passes++;
+    switch(tab->mode) {
+        case U64:
+            while ((iii < count) && (passes < tab->threshold.u)) {
+                if (cells[iii++].u > 0ull) passes++;
+            }
+            if (passes >= tab->threshold.u) fprintf(tab->outfp, "%s", line);
+        case I64:
+            while ((iii < count) && (passes < tab->threshold.i)) {
+                if (cells[iii++].i > 0ll) passes++;
+            }
+            if (passes >= tab->threshold.i) fprintf(tab->outfp, "%s", line);
+        case D64:
+            while ((iii < count) && (passes < tab->threshold.d)) {
+                if (cells[iii++].d > 0.0L) passes++;
+            }
+            if (passes >= tab->threshold.d) fprintf(tab->outfp, "%s", line);
     }
-    return passes >= threshold;
 }
 
 int
-filter_table (table_t *tab)
+filter_table(table_t *tab)
 {
-    size_t buffsize = 1<<8;
-    char *buf = km_calloc(buffsize, sizeof(*buf), &km_onerr_print_exit);
-    size_t cellbuffsize = 1<<8;
-    FT_CELL_TYPE *cell_buf = km_calloc(buffsize, sizeof(*cell_buf),
-            &km_onerr_print_exit);
-    size_t row = 0;
-    ssize_t rowlen = 0;
-    while ((rowlen = km_readline_realloc(buf, tab->fp, &buffsize,
-                                         &km_onerr_print_exit)) > 0) {
-        if (cellbuffsize < buffsize) {
-            km_realloc(cell_buf, buffsize * sizeof(*cell_buf),
-                    &km_onerr_print_exit);
-            cellbuffsize = buffsize;
-        }
-        if (row < tab->skiprow) {
-            row++;
-            fprintf(tab->outfp, "%s", buf);
-            continue;
-        }
-        size_t col = 0;
-        size_t cell = 0;
-
-        char *tok_tmp = NULL;
-        char *token = NULL;
-        char *tok_line = strdup(buf);
-        token = strtok_r(tok_line, tab->sep, &tok_tmp);
-        while (token != NULL) {
-            if (col < tab->skipcol) {
-                col++;
-                continue;
-            }
-            cell_buf[cell++] = FT_CELL_STRTO_FN(token, NULL);
-            col++;
-            token = strtok_r(NULL, tab->sep, &tok_tmp);
-        }
-        if ((*(tab->filter_fn))(cell_buf, tab->threshold, col + 1)) {
-            fprintf(tab->outfp, "%s", buf);
-        }
-        row++;
-        free(tok_line);
-        if (row % 100000 == 0) {fprintf(stderr, "."); fflush(stderr);}
-    }
-    free(buf);
-    free(cell_buf);
+    iter_table(tab, NULL);
     return 1;
 }
 
@@ -106,7 +82,6 @@ print_usage()
     fprintf(stderr, "\t-i INFILE\tInput from INFILE, not stdin (or '-' for stdin).\n");
     fprintf(stderr, "\t-o OUTFILE\tOutput to OUTFILE, not stdout (or '-' for stdout).\n");
     fprintf(stderr, "\t-h \t\tPrint this help message.\n");
-    fpritnf(stderr, "\nThis build of filterTable supports cell values of type
 }
 
 int
@@ -127,13 +102,13 @@ parse_args (int argc, char *argv[], table_t *tab)
         switch (c) {
             case 'm':
                 haveflags |= 1;
-                tab->filter_fn = &ft_median;
-                tab->threshold = FT_CELL_STRTO_FN(optarg, NULL);
+                tab->row_fn = &ft_median;
+                strtocellt(&(tab->threshold), optarg, NULL, U64);
                 break;
             case 'z':
                 haveflags |= 1;
-                tab->filter_fn = &ft_num_nonzero;
-                tab->threshold = FT_CELL_STRTO_FN(optarg, NULL);
+                tab->row_fn = &ft_num_nonzero;
+                strtocellt(&(tab->threshold), optarg, NULL, U64);
                 break;
             case 'o':
                 haveflags |= 2;
@@ -212,11 +187,7 @@ main (int argc, char *argv[])
         print_usage();
         exit(EXIT_SUCCESS);
     }
-    table_t *tab = calloc(1, sizeof(*tab));
-    if (tab == NULL) {
-        fprintf(stderr, "Cannot allocate memory for a table struct.\n");
-        exit(EXIT_FAILURE);
-    }
+    table_t *tab = km_calloc(1, sizeof(*tab), &km_onerr_print_exit);
     if (!parse_args(argc, argv, tab)) {
         destroy_table_t(tab);
         fprintf(stderr, "Cannot parse arguments.\n");
