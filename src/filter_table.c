@@ -26,10 +26,13 @@ ft_median (table_t *tab, char *line, cell_t *cells, size_t count,
     switch(tab->mode) {
         case U64:
             if (med.u >= tab->threshold.u) fprintf(tab->outfp, "%s", line);
+            break;
         case I64:
             if (med.i >= tab->threshold.i) fprintf(tab->outfp, "%s", line);
+            break;
         case D64:
             if (med.d >= tab->threshold.d) fprintf(tab->outfp, "%s", line);
+            break;
     }
 }
 
@@ -45,16 +48,19 @@ ft_num_nonzero (table_t *tab, char *line, cell_t *cells, size_t count,
                 if (cells[iii++].u > 0ull) passes++;
             }
             if (passes >= tab->threshold.u) fprintf(tab->outfp, "%s", line);
+            break;
         case I64:
             while ((iii < count) && (passes < tab->threshold.i)) {
                 if (cells[iii++].i > 0ll) passes++;
             }
             if (passes >= tab->threshold.i) fprintf(tab->outfp, "%s", line);
+            break;
         case D64:
             while ((iii < count) && (passes < tab->threshold.d)) {
                 if (cells[iii++].d > 0.0L) passes++;
             }
             if (passes >= tab->threshold.d) fprintf(tab->outfp, "%s", line);
+            break;
     }
 }
 
