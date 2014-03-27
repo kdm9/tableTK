@@ -49,8 +49,10 @@ typedef struct _table {
     uint64_t skiprow;
     uint64_t skipcol;
     cell_mode_t mode;
-    cell_t threshold;
-    void (*row_fn)(struct _table *, char *, cell_t *, size_t, void *);
+    void *data;
+    int (*skipped_row_fn)(struct _table *, char *);
+    int (*skipped_col_fn)(struct _table *, char *);
+    void (*row_fn)(struct _table *, char *, cell_t *, size_t);
 } table_t;
 
 /* Macros */
@@ -61,6 +63,7 @@ typedef struct _table {
         if ((t)->sep != NULL) free((t)->sep);                               \
         if ((t)->fp != NULL) fclose((t)->fp);                               \
         if ((t)->outfp != NULL) fclose((t)->outfp);                         \
+        if ((t)->data != NULL) free((t)->data);                             \
         free((t));                                                          \
     }} while (0)
 
@@ -80,7 +83,7 @@ typedef struct _table {
 extern void strtocellt(cell_t *cell, const char *str, char **saveptr,
         cell_mode_t mode);
 extern size_t count_columns(const char *row, const char *delim, size_t len);
-int iter_table (table_t *tab, void *data);
+int iter_table (table_t *tab);
 
 /*
  *  This Quickselect routine is based on the algorithm described in

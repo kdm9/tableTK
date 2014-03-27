@@ -52,7 +52,7 @@ strtocellt (cell_t *cell, const char *str, char **saveptr, cell_mode_t mode)
 }
 
 int
-iter_table (table_t *tab, void *data)
+iter_table (table_t *tab)
 {
     if (!table_is_valid(tab)) {
         return -1;
@@ -73,7 +73,9 @@ iter_table (table_t *tab, void *data)
         /* Skip rows we don't want */
         if (km_unlikely(row < tab->skiprow)) {
             row++;
-            fprintf(tab->outfp, "%s", line);
+            if (tab->skipped_row_fn) {
+                (*(tab->skipped_row_fn))(tab, line);
+            }
             continue;
         } else if (km_unlikely(cells == NULL)) {
             /* Get the number of data columns */
@@ -86,14 +88,17 @@ iter_table (table_t *tab, void *data)
         token = strtok_r(tok_line, tab->sep, &tok_tmp);
         while (token != NULL && cell < tab->cols) {
             if (col++ < tab->skipcol) {
+                if (tab->skipped_col_fn) {
+                    (*(tab->skipped_col_fn))(tab, token);
+                }
                 token = strtok_r(NULL, tab->sep, &tok_tmp);
                 continue;
             }
-            strtocellt(&(cells[cell++]), token, NULL, tab->mode);
+            strtocellt(&(cells[cell++]), token, NULL, D64);
             token = strtok_r(NULL, tab->sep, &tok_tmp);
         }
         km_free(tok_line);
-        (*(tab->row_fn))(tab, line, cells, cell, data);
+        (*(tab->row_fn))(tab, line, cells, cell);
         row++;
         tab->rows++;
     }
