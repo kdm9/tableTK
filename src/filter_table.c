@@ -1,22 +1,34 @@
 /*
  * ============================================================================
  *
- *       Filename:  main.c
+ *       Filename:  filter_table.c
  *
- *    Description:  filterTable main script
+ *    Description:  filterTable: Filters tabular data quickly
  *
  *        Version:  1.0
  *        Created:  14/03/14 14:11:29
  *       Revision:  none
  *        License:  GPLv3+
- *       Compiler:  gcc
+ *       Compiler:  gcc 4.7+ or clang 3.2+
  *
  *         Author:  Kevin Murray, spam@kdmurray.id.au
  *
  * ============================================================================
  */
 #include <getopt.h>
-#include "filter_table.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+#include <errno.h>
+#include <assert.h>
+
+#include "kdm.h"
+#include "ktable.h"
+
+typedef struct _ft {
+    cell_t threshold;
+} ft_t;
 
 static inline void
 ft_median (table_t *tab, char *line, cell_t *cells, size_t count)
