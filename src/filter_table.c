@@ -19,47 +19,45 @@
 #include "filter_table.h"
 
 static inline void
-ft_median (table_t *tab, char *line, cell_t *cells, size_t count,
-               void *data)
+ft_median (table_t *tab, char *line, cell_t *cells, size_t count)
 {
     cell_t med = median(cells, count, tab->mode);
     switch(tab->mode) {
         case U64:
-            if (med.u >= tab->threshold.u) fprintf(tab->outfp, "%s", line);
+            if (med.u >= ((ft_t *)tab->data)->threshold.u) fprintf(tab->outfp, "%s", line);
             break;
         case I64:
-            if (med.i >= tab->threshold.i) fprintf(tab->outfp, "%s", line);
+            if (med.i >= ((ft_t *)tab->data)->threshold.i) fprintf(tab->outfp, "%s", line);
             break;
         case D64:
-            if (med.d >= tab->threshold.d) fprintf(tab->outfp, "%s", line);
+            if (med.d >= ((ft_t *)tab->data)->threshold.d) fprintf(tab->outfp, "%s", line);
             break;
     }
 }
 
 static inline void
-ft_num_nonzero (table_t *tab, char *line, cell_t *cells, size_t count,
-               void *data)
+ft_num_nonzero (table_t *tab, char *line, cell_t *cells, size_t count)
 {
     size_t iii = 0;
     size_t passes = 0;
     switch(tab->mode) {
         case U64:
-            while ((iii < count) && (passes < tab->threshold.u)) {
+            while ((iii < count) && (passes < ((ft_t *)tab->data)->threshold.u)) {
                 if (cells[iii++].u > 0ull) passes++;
             }
-            if (passes >= tab->threshold.u) fprintf(tab->outfp, "%s", line);
+            if (passes >= ((ft_t *)tab->data)->threshold.u) fprintf(tab->outfp, "%s", line);
             break;
         case I64:
-            while ((iii < count) && (passes < tab->threshold.i)) {
+            while ((iii < count) && (passes < ((ft_t *)tab->data)->threshold.i)) {
                 if (cells[iii++].i > 0ll) passes++;
             }
-            if (passes >= tab->threshold.i) fprintf(tab->outfp, "%s", line);
+            if (passes >= ((ft_t *)tab->data)->threshold.i) fprintf(tab->outfp, "%s", line);
             break;
         case D64:
-            while ((iii < count) && (passes < tab->threshold.d)) {
+            while ((iii < count) && (passes < ((ft_t *)tab->data)->threshold.d)) {
                 if (cells[iii++].d > 0.0L) passes++;
             }
-            if (passes >= tab->threshold.d) fprintf(tab->outfp, "%s", line);
+            if (passes >= ((ft_t *)tab->data)->threshold.d) fprintf(tab->outfp, "%s", line);
             break;
     }
 }
@@ -67,7 +65,7 @@ ft_num_nonzero (table_t *tab, char *line, cell_t *cells, size_t count,
 int
 filter_table(table_t *tab)
 {
-    iter_table(tab, NULL);
+    iter_table(tab);
     return 1;
 }
 
@@ -91,8 +89,17 @@ print_usage()
 }
 
 int
+print_header (table_t *tab, char *hdr)
+{
+    fprintf(tab->outfp, "%s", hdr);
+    return 1;
+}
+
+int
 parse_args (int argc, char *argv[], table_t *tab)
 {
+    assert(tab);
+    tab->data = km_calloc(1, sizeof(ft_t), &km_onerr_print_exit);
     unsigned char haveflags = 0;
     /*
         1 1 1 1 1 1 1 1
@@ -109,12 +116,12 @@ parse_args (int argc, char *argv[], table_t *tab)
             case 'm':
                 haveflags |= 1;
                 tab->row_fn = &ft_median;
-                strtocellt(&(tab->threshold), optarg, NULL, U64);
+                strtocellt(&(((ft_t *)tab->data)->threshold), optarg, NULL, U64);
                 break;
             case 'z':
                 haveflags |= 1;
                 tab->row_fn = &ft_num_nonzero;
-                strtocellt(&(tab->threshold), optarg, NULL, U64);
+                strtocellt(&(((ft_t *)tab->data)->threshold), optarg, NULL, U64);
                 break;
             case 'o':
                 haveflags |= 2;
@@ -194,6 +201,8 @@ main (int argc, char *argv[])
         exit(EXIT_SUCCESS);
     }
     table_t *tab = km_calloc(1, sizeof(*tab), &km_onerr_print_exit);
+    tab->skipped_row_fn = &print_header;
+    tab->skipped_col_fn = NULL;
     if (!parse_args(argc, argv, tab)) {
         destroy_table_t(tab);
         fprintf(stderr, "Cannot parse arguments.\n");

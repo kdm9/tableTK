@@ -24,11 +24,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include "ktable.h"
 #include "kdm.h"
 
 #define	FT_BUFFSIZE 1<<14
 
-
+typedef struct _ft {
+    cell_t threshold;
+} ft_t;
 
 #endif /* FILTER_TABLE_H */
