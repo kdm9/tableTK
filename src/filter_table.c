@@ -155,7 +155,7 @@ parse_args (int argc, char *argv[], table_t *tab)
     /* Setup input fp */
     if ((!(haveflags & 4)) || tab->fname == NULL || \
             strncmp(tab->fname, "-", 1) == 0) {
-        tab->fp = fdopen(fileno(stdout), "r");
+        tab->fp = fdopen(fileno(stdin), "r");
         tab->fname = strdup("stdin");
         haveflags |= 4;
     } else {
@@ -170,7 +170,7 @@ parse_args (int argc, char *argv[], table_t *tab)
     if ((!(haveflags & 2)) || tab->outfname == NULL || \
             strncmp(tab->outfname, "-", 1) == 0) {
         tab->outfp = fdopen(fileno(stdout), "w");
-        tab->outfname = strdup("stdin");
+        tab->outfname = strdup("stdout");
         haveflags |= 2;
     } else {
         tab->outfp = fopen(tab->outfname, "w");
