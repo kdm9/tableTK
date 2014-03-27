@@ -32,7 +32,7 @@ count_columns (const char *row, const char *delim, size_t len)
         tok = strtok_r(NULL, delim, &tok_tmp);
     }
     km_free(tok_line);
-    return cols + 1; /* Count the last column */
+    return cols;
 }
 
 inline void
@@ -50,6 +50,7 @@ strtocellt (cell_t *cell, const char *str, char **saveptr, cell_mode_t mode)
             break;
     }
 }
+
 
 int
 iter_table (table_t *tab)
@@ -92,13 +93,13 @@ iter_table (table_t *tab)
                     (*(tab->skipped_col_fn))(tab, token);
                 }
                 token = strtok_r(NULL, tab->sep, &tok_tmp);
-                continue;
+               continue;
             }
             strtocellt(&(cells[cell++]), token, NULL, D64);
             token = strtok_r(NULL, tab->sep, &tok_tmp);
         }
         km_free(tok_line);
-        (*(tab->row_fn))(tab, line, cells, cell);
+        (*(tab->row_fn))(tab, line, cells, tab->cols);
         row++;
         tab->rows++;
     }
