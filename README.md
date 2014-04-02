@@ -23,11 +23,21 @@ distance matricies row-wise
 Installation
 ============
 
+We use cmake as the build system, so instead of the customary
+`./configure && make && make install`, use the following. Cmake doesn't take a
+`--prefix` option, please use the analagous `-DCMAKE_INSTALL_PREFIX=` option to
+cmake to install `tableTK` binaries in a non-standard location. Cmake is also
+able to create windows-compatible build configurations, although this has not
+been attempted ([see here](http://www.cmake.org/cmake/help/runningcmake.html)).
+
+    git clone --recursive https://github.com/kdmurray91/tableTK.git tableTK
+    cd tableTK
     mkdir build && cd build
-    cmake ..
+    cmake .. # use -DCMAKE_INSTALL_PREFIX=/path/to/prefix e.g. /usr/local
     make
     ctest
     make install
+
 
 
 Usage
