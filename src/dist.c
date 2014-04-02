@@ -286,7 +286,6 @@ int
 calc_dist_matrix_of_table(table_t *tab)
 {
     dist_mat_t *mat = km_calloc(1, sizeof(*mat), &km_onerr_print_exit);
-    tab->mode = D64;
     tab->data = mat;
     tab->skipped_row_fn = &process_header;
     iter_table(tab);
@@ -331,14 +330,17 @@ parse_args (int argc, char *argv[], table_t *tab)
             case 'm':
                 haveflags |= 1;
                 tab->row_fn = &dm_manhattan;
+                tab->mode = D64;
                 break;
             case 'M':
                 haveflags |= 1;
                 tab->row_fn = &dm_manhattan_binary;
+                tab->mode = D64;
                 binary_cutoff.d = strtold(optarg, NULL);
                 break;
             case 'C':
                 haveflags |= 1;
+                tab->mode = D64;
                 tab->row_fn = &dm_canberra;
                 break;
             case 'o':
