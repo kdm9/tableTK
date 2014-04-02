@@ -9,8 +9,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 enable_testing()
 
 # CC options
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -O3")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -Wall")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
+#set(CMAKE_C_FLAGS_FAST "${CMAKE_C_FLAGS_RELEASE} -O3 -Ofast")
 include_directories(${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/libkdm)
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
