@@ -128,14 +128,12 @@ do_pairwise (void *data, cell_t *cells, size_t count, cell_mode_t mode,
         cell_t (*calc)(cell_t, cell_t, cell_mode_t))
 {
     dist_mat_t *mat = (dist_mat_t *)data;
-    size_t aaa, bbb, iii = 0;
+    size_t aaa, iii = 0;
     cell_t *myrow = NULL;
     #pragma omp parallel for default(none) shared(cells, mat, iii, calc, count, mode) \
-        private(myrow, aaa, bbb) schedule(static, 0x1000)
+        private(myrow, aaa) schedule(static, 0x1000)
     for (aaa = 0; aaa < count; aaa++) {
-        myrow = km_calloc(count - aaa - 1, sizeof(*myrow),
-                &km_onerr_print_exit);
-        size_t cell = 0;
+        size_t bbb, cell = 0;
         for (bbb = aaa + 1; bbb < count; bbb++) {
             cell_t res = (*calc)(cells[aaa], cells[bbb], mode);
             switch(mode) {
@@ -150,16 +148,7 @@ do_pairwise (void *data, cell_t *cells, size_t count, cell_mode_t mode,
                     break;
             }
         }
-        #pragma omp critical
-        {
-            cell_t *m = mat->matrix;
-            #pragma omp parallel for default(none) shared(count, iii) private(m)
-            for (size_t jjj = 0; jjj < (count - aaa - 1); jjj++) {
-                m[iii + jjj].d += myrow[jjj].d;
-            }
-            iii += count - aaa - 1;
-        }
-        km_free(myrow);
+        iii++;
     }
 }
 
